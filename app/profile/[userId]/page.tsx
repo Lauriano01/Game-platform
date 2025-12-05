@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { db, auth } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useParams, useRouter } from "next/navigation";
-import { User } from "../../types";
+import { User } from "../../../types";
 
 const ProfilePage = () => {
   const { userId } = useParams();
@@ -12,22 +12,22 @@ const ProfilePage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<User | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [formData, setFormData] = useState<{ [key: string]: any }>({});
 
   const currentUser = auth.currentUser;
   const isOwnProfile = currentUser?.uid === userId;
 
   // Carregar dados do usuário
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || Array.isArray(userId)) return; // garante que userId é string
+
     const fetchUserData = async () => {
       try {
         const userDocRef = doc(db, "users", userId);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          setUser(userData);
+          const userData = userDoc.data();
+          setUser(userData as User);
           setFormData(userData);
         }
       } catch (error) {
@@ -36,16 +36,25 @@ const ProfilePage = () => {
         setLoading(false);
       }
     };
+
     fetchUserData();
   }, [userId]);
 
-  // Salvar dados editados
   const handleSave = async () => {
-    if (!formData) return;
+    if (!formData || !userId || Array.isArray(userId)) return;
+
     try {
       const userDocRef = doc(db, "users", userId);
-      await updateDoc(userDocRef, formData);
-      setUser(formData);
+      // Converte para objeto simples e remove undefined
+      const cleanData: { [key: string]: any } = {};
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== undefined) {
+          cleanData[key] = formData[key];
+        }
+      });
+
+      await updateDoc(userDocRef, cleanData);
+      setUser(cleanData as User);
       setIsEditing(false);
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
@@ -54,21 +63,17 @@ const ProfilePage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (formData) setFormData({ ...formData, [name]: value });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, field: keyof User) => {
+  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, field: string) => {
     const options = Array.from(e.target.selectedOptions).map(option => option.value);
-    if (formData) setFormData({ ...formData, [field]: options });
+    setFormData(prev => ({ ...prev, [field]: options }));
   };
 
   const toggleEdit = () => setIsEditing(!isEditing);
   const handleBack = () => router.push("/");
-
-  // Redireciona para arquivo de teste para atualizar a foto
-  const handleOpenPicTest = () => {
-    router.push(`/PicTest?userId=${userId}`);
-  };
+  const handleOpenPicTest = () => router.push(`/PicTest?userId=${userId}`);
 
   if (loading) {
     return (
@@ -112,7 +117,7 @@ const ProfilePage = () => {
               <input
                 type="text"
                 name="name"
-                value={formData?.name || ""}
+                value={formData.name || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -127,7 +132,7 @@ const ProfilePage = () => {
               <input
                 type="number"
                 name="age"
-                value={formData?.age || ""}
+                value={formData.age || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -142,7 +147,7 @@ const ProfilePage = () => {
               <input
                 type="text"
                 name="location"
-                value={formData?.location || ""}
+                value={formData.location || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -157,12 +162,12 @@ const ProfilePage = () => {
               <input
                 type="text"
                 name="interests"
-                value={(formData?.interests || []).join(", ")}
+                value={(formData.interests || []).join(", ")}
                 onChange={e =>
-                  setFormData({
-                    ...formData!,
+                  setFormData(prev => ({
+                    ...prev,
                     interests: e.target.value.split(",").map(s => s.trim())
-                  })
+                  }))
                 }
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -176,11 +181,11 @@ const ProfilePage = () => {
             {isEditing ? (
               <select
                 name="sexualPreference"
-                value={formData?.sexualPreference || ""}
+                value={formData.sexualPreference || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               >
-                {["Homens","Mulheres","Gay","Lésbica","Bissexual","Pansexual"].map(pref => (
+                {["Homens", "Mulheres", "Gay", "Lésbica", "Bissexual", "Pansexual"].map(pref => (
                   <option key={pref} value={pref}>{pref}</option>
                 ))}
               </select>
@@ -194,11 +199,11 @@ const ProfilePage = () => {
             {isEditing ? (
               <select
                 multiple
-                value={formData?.datePreference || []}
+                value={formData.datePreference || []}
                 onChange={e => handleMultiSelectChange(e, "datePreference")}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               >
-                {["Jantar","Ambientes tranquilos","Sexo","Cinema","Conversar","Praia","Negócios"].map(pref => (
+                {["Jantar", "Ambientes tranquilos", "Sexo", "Cinema", "Conversar", "Praia", "Negócios"].map(pref => (
                   <option key={pref} value={pref}>{pref}</option>
                 ))}
               </select>
@@ -212,11 +217,11 @@ const ProfilePage = () => {
             {isEditing ? (
               <select
                 multiple
-                value={formData?.meetingRequest || []}
+                value={formData.meetingRequest || []}
                 onChange={e => handleMultiSelectChange(e, "meetingRequest")}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               >
-                {["Comer","Beber","Respeito","Abraços","Beijos"].map(req => (
+                {["Comer", "Beber", "Respeito", "Abraços", "Beijos"].map(req => (
                   <option key={req} value={req}>{req}</option>
                 ))}
               </select>

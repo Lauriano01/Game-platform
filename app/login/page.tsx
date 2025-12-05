@@ -20,20 +20,18 @@ export default function LoginPage() {
     setError(null); // Limpar erros ao tentar novamente
 
     try {
-      // Lógica de autenticação no Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, email, password); // Tentando logar com Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      // Verifique se o login foi bem-sucedido
       if (userCredential.user) {
-        console.log("Login bem-sucedido", userCredential.user); // Para depuração, você pode ver o usuário logado
-        // Redireciona para a home page após login
-        router.push("/home"); // Redirecionando para a página inicial (home)
+        console.log("Login bem-sucedido", userCredential.user);
+        router.push("/home");
       }
-    } catch (error: any) {
-      console.error("Erro ao fazer login:", error);
+    } catch (err: any) {
+      console.error("Erro ao fazer login:", err);
 
-      // Mensagens específicas de erro
-      switch (error.code) {
+      const errorCode = err.code;
+
+      switch (errorCode) {
         case "auth/invalid-email":
           setError("O e-mail inserido é inválido. Por favor, insira um e-mail válido.");
           break;
@@ -64,13 +62,14 @@ export default function LoginPage() {
     try {
       await sendPasswordResetEmail(auth, resetEmail);
       alert("E-mail de redefinição de senha enviado! Verifique sua caixa de entrada.");
-      setShowResetPassword(false); // Fechar a caixa de redefinição
-    } catch (error) {
-      console.error("Erro ao enviar e-mail de redefinição:", error);
-      // Mensagens de erro de redefinição de senha
-      if (error.code === "auth/invalid-email") {
+      setShowResetPassword(false);
+    } catch (err: any) { // <-- Corrigido aqui: 'any'
+      console.error("Erro ao enviar e-mail de redefinição:", err);
+      const errorCode = err.code;
+
+      if (errorCode === "auth/invalid-email") {
         setError("O e-mail inserido é inválido. Por favor, insira um e-mail válido.");
-      } else if (error.code === "auth/user-not-found") {
+      } else if (errorCode === "auth/user-not-found") {
         setError("Não encontramos uma conta com esse e-mail. Verifique e tente novamente.");
       } else {
         setError("Erro ao enviar e-mail de redefinição de senha. Tente novamente.");
@@ -81,14 +80,12 @@ export default function LoginPage() {
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#1a1a2e] px-4">
       <div className="flex flex-col justify-center items-center w-full max-w-lg">
-        {/* Se estiver na tela de redefinição de senha, não exibe o formulário de login */}
         {!showResetPassword ? (
           <div className="flex flex-col bg-[#2f3640] shadow-xl rounded-2xl p-10 w-full max-w-md mt-10">
             <h1 className="text-4xl font-extrabold mb-8 text-[#ff4757] text-center">
               Login
             </h1>
 
-            {/* Exibição de erro de login */}
             {error && (
               <div className="mb-4 text-red-500 text-center">
                 <span>{error}</span>
@@ -102,7 +99,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-4 mb-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff4757] text-white bg-[#3c3f58] placeholder-gray-400"
               required
-              autoComplete="username"  // Autocompletar com o nome de usuário
+              autoComplete="username"
             />
 
             <input
@@ -112,19 +109,18 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-4 mb-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff4757] text-white bg-[#3c3f58] placeholder-gray-400"
               required
-              autoComplete="current-password" // Autocompletar com a senha
+              autoComplete="current-password"
             />
 
             <button
               type="submit"
-              onClick={(e) => handleLogin(e)}
+              onClick={handleLogin}
               className="w-full bg-[#ff4757] text-white p-4 rounded-lg font-semibold hover:bg-[#e84118] transition duration-300"
               disabled={loading}
             >
               {loading ? "Entrando..." : "Entrar"}
             </button>
 
-            {/* Link para Esqueceu a senha */}
             <div className="text-center mt-3">
               <span
                 className="text-[#ff4757] font-semibold cursor-pointer hover:underline"
@@ -150,7 +146,6 @@ export default function LoginPage() {
               Redefinir Senha
             </h1>
 
-            {/* Exibição de erro de redefinição de senha */}
             {error && (
               <div className="mb-4 text-red-500 text-center">
                 <span>{error}</span>
@@ -164,7 +159,7 @@ export default function LoginPage() {
               onChange={(e) => setResetEmail(e.target.value)}
               className="w-full p-4 mb-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff4757] text-white bg-[#3c3f58] placeholder-gray-400"
               required
-              autoComplete="email" // Autocompletar com o e-mail
+              autoComplete="email"
             />
 
             <button

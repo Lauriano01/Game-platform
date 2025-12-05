@@ -10,10 +10,11 @@ import { User } from "../../types";
 const ProfilePage = () => {
   const { userId } = useParams();
   const router = useRouter();
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<User | null>(null);
+  const [formData, setFormData] = useState<{ [key: string]: any }>({});
   const [uploading, setUploading] = useState(false);
 
   const currentUser = auth.currentUser;
@@ -21,7 +22,7 @@ const ProfilePage = () => {
 
   // Carregar dados do usuário
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || Array.isArray(userId)) return;
 
     const fetchUserData = async () => {
       try {
@@ -29,8 +30,8 @@ const ProfilePage = () => {
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          setUser(userData);
+          const userData = userDoc.data();
+          setUser(userData as User);
           setFormData(userData);
         } else {
           console.log("Usuário não encontrado");
@@ -47,57 +48,59 @@ const ProfilePage = () => {
 
   // Salvar alterações do perfil
   const handleSave = async () => {
-    if (!formData) return;
+    if (!formData || !userId || Array.isArray(userId)) return;
+
     try {
       const userDocRef = doc(db, "users", userId);
-      await updateDoc(userDocRef, formData);
-      setUser(formData);
+
+      // Limpar campos undefined
+      const cleanData: { [key: string]: any } = {};
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== undefined) {
+          cleanData[key] = formData[key];
+        }
+      });
+
+      await updateDoc(userDocRef, cleanData);
+      setUser(cleanData as User);
       setIsEditing(false);
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
+      alert("Erro ao salvar os dados. Tente novamente.");
     }
   };
 
   // Atualizar campos de input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (formData) {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, field: keyof User) => {
+  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, field: string) => {
     const options = Array.from(e.target.selectedOptions).map(option => option.value);
-    if (formData) setFormData({ ...formData, [field]: options });
+    setFormData(prev => ({ ...prev, [field]: options }));
   };
 
-  const toggleEdit = () => setIsEditing(!isEditing);
+  const toggleEdit = () => setIsEditing(prev => !prev);
   const handleBack = () => router.push("/");
 
-  // **Função atualizada para enviar a foto de perfil**
+  // Enviar foto de perfil
   const handleProfilePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+    if (!e.target.files || e.target.files.length === 0 || !userId || Array.isArray(userId)) return;
+
     const file = e.target.files[0];
-    if (!file || !userId) return;
-
     setUploading(true);
+
     try {
-      // Cria referência no Storage para o usuário atual
       const storageRef = ref(storage, `profilePics/${userId}/profile.jpg`);
-
-      // Envia arquivo
       await uploadBytes(storageRef, file);
-
-      // Obtém URL pública
       const downloadURL = await getDownloadURL(storageRef);
 
-      // Atualiza Firestore com a URL da foto
       const userDocRef = doc(db, "users", userId);
       await updateDoc(userDocRef, { profilePic: downloadURL });
 
-      // Atualiza estado local
-      if (formData) setFormData({ ...formData, profilePic: downloadURL });
       setUser(prev => (prev ? { ...prev, profilePic: downloadURL } : prev));
+      setFormData(prev => (prev ? { ...prev, profilePic: downloadURL } : {}));
 
       alert("Foto de perfil atualizada com sucesso!");
     } catch (error) {
@@ -117,8 +120,9 @@ const ProfilePage = () => {
     );
   }
 
-  if (!user)
+  if (!user) {
     return <div className="text-white text-center">Usuário não encontrado. Verifique o ID e tente novamente.</div>;
+  }
 
   return (
     <div className="bg-gray-900 text-white p-8 min-h-screen">
@@ -130,7 +134,7 @@ const ProfilePage = () => {
           <img
             src={user.profilePic || "https://via.placeholder.com/150"}
             alt={`${user.name}'s profile`}
-            className="w-32 h-32 rounded-full border-4 border-gray-600"
+            className="w-32 h-32 rounded-full border-4 border-gray-600 object-cover"
           />
           {isOwnProfile && (
             <div className="mt-4">
@@ -153,13 +157,14 @@ const ProfilePage = () => {
 
         {/* Dados do usuário */}
         <div className="flex-1">
+          {/* Nome */}
           <div className="mb-4">
             <strong>Nome:</strong>
             {isEditing ? (
               <input
                 type="text"
                 name="name"
-                value={formData?.name || ""}
+                value={formData.name || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -168,13 +173,14 @@ const ProfilePage = () => {
             )}
           </div>
 
+          {/* Idade */}
           <div className="mb-4">
             <strong>Idade:</strong>
             {isEditing ? (
               <input
                 type="number"
                 name="age"
-                value={formData?.age || ""}
+                value={formData.age || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -183,13 +189,14 @@ const ProfilePage = () => {
             )}
           </div>
 
+          {/* Localização */}
           <div className="mb-4">
             <strong>Localização:</strong>
             {isEditing ? (
               <input
                 type="text"
                 name="location"
-                value={formData?.location || ""}
+                value={formData.location || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -198,18 +205,19 @@ const ProfilePage = () => {
             )}
           </div>
 
+          {/* Interesses */}
           <div className="mb-4">
             <strong>Interesses:</strong>
             {isEditing ? (
               <input
                 type="text"
                 name="interests"
-                value={(formData?.interests || []).join(", ")}
+                value={(formData.interests || []).join(", ")}
                 onChange={e =>
-                  setFormData({
-                    ...formData!,
+                  setFormData(prev => ({
+                    ...prev,
                     interests: e.target.value.split(",").map(s => s.trim())
-                  })
+                  }))
                 }
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               />
@@ -218,12 +226,13 @@ const ProfilePage = () => {
             )}
           </div>
 
+          {/* Preferência Sexual */}
           <div className="mb-4">
             <strong>Preferência Sexual:</strong>
             {isEditing ? (
               <select
                 name="sexualPreference"
-                value={formData?.sexualPreference || ""}
+                value={formData.sexualPreference || ""}
                 onChange={handleInputChange}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               >
@@ -236,12 +245,13 @@ const ProfilePage = () => {
             )}
           </div>
 
+          {/* Preferências de Encontros */}
           <div className="mb-4">
             <strong>Preferências de Encontros:</strong>
             {isEditing ? (
               <select
                 multiple
-                value={formData?.datePreference || []}
+                value={formData.datePreference || []}
                 onChange={e => handleMultiSelectChange(e, "datePreference")}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               >
@@ -254,12 +264,13 @@ const ProfilePage = () => {
             )}
           </div>
 
+          {/* Solicitações no Encontro */}
           <div className="mb-4">
             <strong>Solicitações no Encontro:</strong>
             {isEditing ? (
               <select
                 multiple
-                value={formData?.meetingRequest || []}
+                value={formData.meetingRequest || []}
                 onChange={e => handleMultiSelectChange(e, "meetingRequest")}
                 className="w-full p-2 mt-2 bg-gray-800 text-white border border-gray-600 rounded"
               >

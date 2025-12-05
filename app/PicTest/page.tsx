@@ -1,16 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { useSearchParams, useRouter } from "next/navigation";
 
-const PicTest = () => {
+const PicTestContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [profilePicURL, setProfilePicURL] = useState<string | null>(null);
-  const userId = searchParams.get("userId"); // pega o UID do perfil
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Pega o userId de forma segura no client
+  useEffect(() => {
+    const id = searchParams.get("userId");
+    setUserId(id);
+  }, [searchParams]);
 
   if (!userId) return <div className="text-white">Usuário não encontrado.</div>;
 
@@ -39,7 +45,7 @@ const PicTest = () => {
       await updateDoc(userDocRef, { profilePic: data.url });
 
       alert("Foto de perfil atualizada com sucesso!");
-      router.push(`/profile/${userId}`); // volta para o perfil atualizado
+      router.push(`/profile/${userId}`);
     } catch (err) {
       console.error(err);
       alert("Erro ao enviar a foto de perfil.");
@@ -68,6 +74,14 @@ const PicTest = () => {
       />
       {uploading && <p>Enviando...</p>}
     </div>
+  );
+};
+
+const PicTest = () => {
+  return (
+    <Suspense fallback={<div className="text-white p-8">Carregando...</div>}>
+      <PicTestContent />
+    </Suspense>
   );
 };
 
