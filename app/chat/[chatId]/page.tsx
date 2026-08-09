@@ -1,259 +1,288 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { db, auth } from "@/lib/firebase";
 
 import {
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  serverTimestamp,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
+collection,
+addDoc,
+query,
+orderBy,
+onSnapshot,
+serverTimestamp,
+doc,
+setDoc,
+getDoc,
+updateDoc,
 } from "firebase/firestore";
 
+type ChatUser = {
+name?: string;
+[key: string]: any;
+};
+
 export default function ChatPage() {
-  const { chatId } = useParams();
+const router = useRouter();
+const { chatId } = useParams();
 
-  const [userId, setUserId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [text, setText] = useState("");
-  const [chatUser, setChatUser] = useState<any>(null);
+const [userId, setUserId] = useState<string | null>(null);
+const [messages, setMessages] = useState<any[]>([]);
+const [text, setText] = useState("");
+const [chatUser, setChatUser] = useState<ChatUser | null>(null);
 
-  const [showEmoji, setShowEmoji] = useState(false);
+const [showEmoji, setShowEmoji] = useState(false);
 
-  const emojis = ["😂", "❤️", "🔥", "👍", "😢", "😍", "🙏", "😎"];
+const emojis = ["😂", "❤️", "🔥", "👍", "😢", "😍", "🙏", "😎"];
 
-  // AUTH
-  useEffect(() => {
-    const unsub = auth.onAuthStateChanged((user) => {
-      if (user) setUserId(user.uid);
-      else setUserId(null);
-    });
+// AUTH
+useEffect(() => {
+const unsub = auth.onAuthStateChanged((user) => {
+if (user) setUserId(user.uid);
+else setUserId(null);
+});
 
-    return () => unsub();
-  }, []);
 
-  // MESSAGES
-  useEffect(() => {
-    if (!chatId || !userId) return;
+return () => unsub();
 
-    const q = query(
-      collection(db, "conversations", chatId as string, "messages"),
-      orderBy("createdAt")
-    );
 
-    return onSnapshot(q, async (snapshot) => {
-      const loadedMessages = snapshot.docs.map((messageDoc) => ({
-        id: messageDoc.id,
-        ...messageDoc.data(),
-      }));
+}, []);
 
-      setMessages(loadedMessages);
+// MESSAGES
+useEffect(() => {
+if (!chatId || !userId) return;
 
-      // Marca como vistas as mensagens recebidas
-      // que ainda estavam como seen: false
-      const unreadMessages = snapshot.docs.filter((messageDoc) => {
-        const data = messageDoc.data();
+const q = query(
+  collection(db, "conversations", chatId as string, "messages"),
+  orderBy("createdAt")
+);
 
-        return data.senderId !== userId && data.seen === false;
-      });
+return onSnapshot(q, async (snapshot) => {
+  const loadedMessages = snapshot.docs.map((messageDoc) => ({
+    id: messageDoc.id,
+    ...messageDoc.data(),
+  }));
 
-      if (unreadMessages.length > 0) {
-        try {
-          await Promise.all(
-            unreadMessages.map((messageDoc) =>
-              updateDoc(
-                doc(
-                  db,
-                  "conversations",
-                  chatId as string,
-                  "messages",
-                  messageDoc.id
-                ),
-                {
-                  seen: true,
-                }
-              )
-            )
-          );
-        } catch (error) {
-          console.error(
-            "Erro ao marcar mensagens como vistas:",
-            error
-          );
-        }
-      }
-    });
-  }, [chatId, userId]);
+  setMessages(loadedMessages);
 
-  // BUSCAR NOME DA PESSOA DO CHAT
-  useEffect(() => {
-    const loadUser = async () => {
-      if (!chatId || !userId) return;
+  // Marca como vistas as mensagens recebidas
+  // que ainda estavam como seen: false
+  const unreadMessages = snapshot.docs.filter((messageDoc) => {
+    const data = messageDoc.data();
 
-      const ids = (chatId as string).split("_");
+    return data.senderId !== userId && data.seen === false;
+  });
 
-      const otherUserId = ids.find((id) => id !== userId);
+  if (unreadMessages.length > 0) {
+    try {
+      await Promise.all(
+        unreadMessages.map((messageDoc) =>
+          updateDoc(
+            doc(
+              db,
+              "conversations",
+              chatId as string,
+              "messages",
+              messageDoc.id
+            ),
+            {
+              seen: true,
+            }
+          )
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao marcar mensagens como vistas:",
+        error
+      );
+    }
+  }
+});
 
-      if (!otherUserId) return;
 
-      const userRef = doc(db, "users", otherUserId);
-      const snap = await getDoc(userRef);
+}, [chatId, userId]);
 
-      if (snap.exists()) {
-        setChatUser(snap.data());
-      }
-    };
+// BUSCAR NOME DA PESSOA DO CHAT
+useEffect(() => {
+const loadUser = async () => {
+if (!chatId || !userId) return;
 
-    loadUser();
-  }, [chatId, userId]);
 
-  // ONLINE STATUS
-  useEffect(() => {
-    if (!userId || !chatId) return;
+  const ids = (chatId as string).split("_");
 
-    const statusRef = doc(
-      db,
-      "conversations",
-      chatId as string,
-      "status",
-      userId
-    );
+  const otherUserId = ids.find((id) => id !== userId);
 
-    setDoc(statusRef, {
-      online: true,
-      lastSeen: serverTimestamp(),
-    });
+  if (!otherUserId) return;
 
-    const interval = setInterval(() => {
-      setDoc(statusRef, {
-        online: true,
-        lastSeen: serverTimestamp(),
-      });
-    }, 15000);
+  const userRef = doc(db, "users", otherUserId);
+  const snap = await getDoc(userRef);
 
-    return () => {
-      setDoc(statusRef, {
-        online: false,
-        lastSeen: serverTimestamp(),
-      });
+  if (snap.exists()) {
+    setChatUser(snap.data() as ChatUser);
+  }
+};
 
-      clearInterval(interval);
-    };
-  }, [userId, chatId]);
+loadUser();
 
-  // SEND MESSAGE
-  const sendMessage = async () => {
-    if (!text.trim() || !userId || !chatId) return;
 
-    await addDoc(
-      collection(db, "conversations", chatId as string, "messages"),
-      {
-        text,
-        senderId: userId,
-        createdAt: serverTimestamp(),
-        seen: false,
-      }
-    );
+}, [chatId, userId]);
 
-    setText("");
-  };
+// ONLINE STATUS
+useEffect(() => {
+if (!userId || !chatId) return;
 
-  // EMOJI
-  const addEmoji = (emoji: string) => {
-    setText((prev) => prev + emoji);
-    setShowEmoji(false);
-  };
 
-  return (
-    <div className="flex flex-col h-screen bg-gray-900 text-white">
+const statusRef = doc(
+  db,
+  "conversations",
+  chatId as string,
+  "status",
+  userId
+);
 
-      {/* HEADER MELHORADO */}
-      <div className="p-4 border-b border-gray-700">
-        <h1 className="text-xl font-bold">
-          💬 {chatUser?.name || "Chat"}
-        </h1>
+setDoc(statusRef, {
+  online: true,
+  lastSeen: serverTimestamp(),
+});
 
-        <p className="text-xs text-green-400">
-          🟢 online agora
-        </p>
-      </div>
+const interval = setInterval(() => {
+  setDoc(statusRef, {
+    online: true,
+    lastSeen: serverTimestamp(),
+  });
+}, 15000);
 
-      {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.map((msg) => {
-          const isMe = msg.senderId === userId;
+return () => {
+  setDoc(statusRef, {
+    online: false,
+    lastSeen: serverTimestamp(),
+  });
 
-          return (
-            <div
-              key={msg.id}
-              className={`flex ${
-                isMe ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`p-3 rounded-lg max-w-xs ${
-                  isMe ? "bg-green-600" : "bg-gray-700"
-                }`}
-              >
-                <div>{msg.text}</div>
+  clearInterval(interval);
+};
 
-                {isMe && (
-                  <div className="text-xs text-white/70 text-right">
-                    {msg.seen ? "visto ✓✓" : "enviado ✓"}
-                  </div>
-                )}
+
+}, [userId, chatId]);
+
+// SEND MESSAGE
+const sendMessage = async () => {
+if (!text.trim() || !userId || !chatId) return;
+
+
+await addDoc(
+  collection(db, "conversations", chatId as string, "messages"),
+  {
+    text,
+    senderId: userId,
+    createdAt: serverTimestamp(),
+    seen: false,
+  }
+);
+
+setText("");
+
+
+};
+
+// EMOJI
+const addEmoji = (emoji: string) => {
+setText((prev) => prev + emoji);
+setShowEmoji(false);
+};
+
+// VOLTAR PARA MENSAGENS
+const handleBack = () => {
+router.push("/messages");
+};
+
+return ( <div className="flex flex-col h-screen">
+{/* HEADER MELHORADO */} <div className="p-4 border-b border-gray-700"> <button
+       onClick={handleBack}
+       className="mb-3 bg-gray-700 px-4 py-2 rounded hover:bg-gray-600 transition"
+     >
+← Voltar </button>
+
+```
+    <h1 className="text-xl font-bold">
+      💬 {chatUser?.name || "Chat"}
+    </h1>
+
+    <p className="text-xs text-green-400">
+      🟢 online agora
+    </p>
+  </div>
+
+  {/* MESSAGES */}
+  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+    {messages.map((msg) => {
+      const isMe = msg.senderId === userId;
+
+      return (
+        <div
+          key={msg.id}
+          className={`flex ${
+            isMe ? "justify-end" : "justify-start"
+          }`}
+        >
+          <div
+            className={`p-3 rounded-lg max-w-xs ${
+              isMe ? "bg-green-600" : "bg-gray-700"
+            }`}
+          >
+            <div>{msg.text}</div>
+
+            {isMe && (
+              <div className="text-xs text-white/70 text-right">
+                {msg.seen ? "visto ✓✓" : "enviado ✓"}
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* EMOJI */}
-      {showEmoji && (
-        <div className="p-2 flex gap-2 flex-wrap bg-gray-800 border-t border-gray-700">
-          {emojis.map((e) => (
-            <button
-              key={e}
-              onClick={() => addEmoji(e)}
-              className="text-xl"
-            >
-              {e}
-            </button>
-          ))}
+            )}
+          </div>
         </div>
-      )}
+      );
+    })}
+  </div>
 
-      {/* INPUT */}
-      <div className="p-4 border-t border-gray-700 flex gap-2 items-center">
-
+  {/* EMOJI */}
+  {showEmoji && (
+    <div className="p-2 flex gap-2 flex-wrap bg-gray-800 border-t border-gray-700">
+      {emojis.map((e) => (
         <button
-          onClick={() => setShowEmoji(!showEmoji)}
+          key={e}
+          onClick={() => addEmoji(e)}
           className="text-xl"
         >
-          😊
+          {e}
         </button>
-
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="flex-1 p-2 bg-gray-800 rounded"
-          placeholder="Escreve mensagem..."
-        />
-
-        <button
-          onClick={sendMessage}
-          className="bg-blue-600 px-4 py-2 rounded"
-        >
-          Enviar
-        </button>
-      </div>
+      ))}
     </div>
-  );
+  )}
+
+  {/* INPUT */}
+  <div className="p-4 border-t border-gray-700 flex gap-2 items-center">
+    <button
+      onClick={() => setShowEmoji(!showEmoji)}
+      className="text-xl"
+    >
+      😊
+    </button>
+
+    <input
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      className="flex-1 p-2 bg-gray-800 rounded"
+      placeholder="Escreve mensagem..."
+    />
+
+    <button
+      onClick={sendMessage}
+      className="bg-blue-600 px-4 py-2 rounded"
+    >
+      Enviar
+    </button>
+  </div>
+</div>
+
+
+);
 }
