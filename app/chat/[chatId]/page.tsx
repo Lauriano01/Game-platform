@@ -14,6 +14,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
 } from "firebase/firestore";
 
 export default function ChatPage() {
@@ -22,7 +23,7 @@ export default function ChatPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState("");
-  const [chatUser, setChatUser] = useState<any>(null); // 👈 NOVO
+  const [chatUser, setChatUser] = useState<any>(null);
 
   const [showEmoji, setShowEmoji] = useState(false);
 
@@ -40,24 +41,58 @@ export default function ChatPage() {
 
   // MESSAGES
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId || !userId) return;
 
     const q = query(
       collection(db, "conversations", chatId as string, "messages"),
       orderBy("createdAt")
     );
 
-    return onSnapshot(q, (snapshot) => {
-      setMessages(
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-      );
-    });
-  }, [chatId]);
+    return onSnapshot(q, async (snapshot) => {
+      const loadedMessages = snapshot.docs.map((messageDoc) => ({
+        id: messageDoc.id,
+        ...messageDoc.data(),
+      }));
 
-  // 👇 BUSCAR NOME DA PESSOA DO CHAT
+      setMessages(loadedMessages);
+
+      // Marca como vistas as mensagens recebidas
+      // que ainda estavam como seen: false
+      const unreadMessages = snapshot.docs.filter((messageDoc) => {
+        const data = messageDoc.data();
+
+        return data.senderId !== userId && data.seen === false;
+      });
+
+      if (unreadMessages.length > 0) {
+        try {
+          await Promise.all(
+            unreadMessages.map((messageDoc) =>
+              updateDoc(
+                doc(
+                  db,
+                  "conversations",
+                  chatId as string,
+                  "messages",
+                  messageDoc.id
+                ),
+                {
+                  seen: true,
+                }
+              )
+            )
+          );
+        } catch (error) {
+          console.error(
+            "Erro ao marcar mensagens como vistas:",
+            error
+          );
+        }
+      }
+    });
+  }, [chatId, userId]);
+
+  // BUSCAR NOME DA PESSOA DO CHAT
   useEffect(() => {
     const loadUser = async () => {
       if (!chatId || !userId) return;
@@ -158,7 +193,9 @@ export default function ChatPage() {
           return (
             <div
               key={msg.id}
-              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+              className={`flex ${
+                isMe ? "justify-end" : "justify-start"
+              }`}
             >
               <div
                 className={`p-3 rounded-lg max-w-xs ${

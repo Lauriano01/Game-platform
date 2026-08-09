@@ -48,8 +48,11 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
-  const handleBack = () => router.push("/");
-  const handleOpenPicTest = () => router.push(`/PicTest?userId=${userId}`);
+  // VOLTAR PARA HOME
+  const handleBack = () => router.push("/home");
+
+  const handleOpenPicTest = () =>
+    router.push(`/PicTest?userId=${userId}`);
 
   // 💬 CRIAR OU ABRIR CHAT
   const handleStartChat = async () => {
@@ -75,17 +78,15 @@ const ProfilePage = () => {
     router.push(`/chat/${chatId}`);
   };
 
-  if (loading) return <div className="text-white">Carregando...</div>;
-  if (!user) return <div className="text-white">Usuário não encontrado</div>;
+  if (loading) return <>Carregando...</>;
+  if (!user) return <>Usuário não encontrado</>;
 
   return (
-    <div className="bg-gray-900 text-white p-8 min-h-screen">
-
+    <div>
       <h1 className="text-4xl text-center mb-8">👤 Perfil</h1>
 
       {/* FOTO */}
       <div className="flex flex-col items-center mb-6">
-
         <img
           src={user.profilePic || "https://via.placeholder.com/150"}
           className="w-32 h-32 rounded-full border-4 border-gray-600 object-cover"
@@ -161,70 +162,185 @@ const ProfilePage = () => {
           )}
         </div>
 
+        {/* PREFERÊNCIA SEXUAL */}
         <div>
           <strong>Preferência Sexual:</strong>
           {isEditing ? (
-            <input
+            <select
               value={formData.sexualPreference || ""}
               onChange={(e) =>
-                setFormData({ ...formData, sexualPreference: e.target.value })
+                setFormData({
+                  ...formData,
+                  sexualPreference: e.target.value,
+                })
               }
-              className="w-full p-2 bg-gray-800"
-            />
+              className="w-full p-2 bg-gray-800 text-white"
+            >
+              <option value="">Selecione uma opção</option>
+              <option value="Heterossexual">Heterossexual</option>
+              <option value="Homossexual">Homossexual</option>
+              <option value="Gay">Gay</option>
+              <option value="Lésbica">Lésbica</option>
+              <option value="Bissexual">Bissexual</option>
+              <option value="Outro">Outro</option>
+              <option value="Prefiro não responder">
+                Prefiro não responder
+              </option>
+            </select>
           ) : (
             <p>{user.sexualPreference}</p>
           )}
         </div>
 
+        {/* INTERESSES */}
         <div>
           <strong>Interesses:</strong>
           {isEditing ? (
-            <input
-              value={(formData.interests || []).join(", ")}
+            <select
+              multiple
+              value={formData.interests || []}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  interests: e.target.value.split(","),
+                  interests: Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value
+                  ),
                 })
               }
-              className="w-full p-2 bg-gray-800"
-            />
+              className="w-full p-2 bg-gray-800 text-white"
+              size={8}
+            >
+              <option value="💰 Dinheiro">💰 Dinheiro</option>
+              <option value="🎉 Festas">🎉 Festas</option>
+              <option value="🍻 Beber e sair">🍻 Beber e sair</option>
+              <option value="💕 Encontros">💕 Encontros</option>
+              <option value="❤️ Relacionamento sério">
+                ❤️ Relacionamento sério
+              </option>
+              <option value="💬 Conhecer pessoas">
+                💬 Conhecer pessoas
+              </option>
+              <option value="😏 Algo casual">😏 Algo casual</option>
+              <option value="🔥 Encontro íntimo">
+                🔥 Encontro íntimo
+              </option>
+              <option value="👫 Fazer amizades">
+                👫 Fazer amizades
+              </option>
+              <option value="🌙 Sair à noite">🌙 Sair à noite</option>
+              <option value="🍽️ Jantar/encontro romântico">
+                🍽️ Jantar/encontro romântico
+              </option>
+              <option value="🎮 Jogar juntos">🎮 Jogar juntos</option>
+              <option value="🎵 Concertos e eventos">
+                🎵 Concertos e eventos
+              </option>
+              <option value="☕ Conversar/conhecer melhor">
+                ☕ Conversar/conhecer melhor
+              </option>
+              <option value="💑 Namoro">💑 Namoro</option>
+              <option value="💍 Casamento">💍 Casamento</option>
+              <option value="🤝 Networking">🤝 Networking</option>
+              <option value="🚫 Sem compromisso">
+                🚫 Sem compromisso
+              </option>
+              <option value="❤️‍🔥 Relação aberta">
+                ❤️‍🔥 Relação aberta
+              </option>
+              <option value="👥 Encontros em grupo">
+                👥 Encontros em grupo
+              </option>
+            </select>
           ) : (
             <p>{(user.interests || []).join(", ")}</p>
           )}
         </div>
 
+        {/* ENCONTROS */}
         <div>
           <strong>Encontros:</strong>
           {isEditing ? (
-            <input
-              value={(formData.datePreference || []).join(", ")}
+            <select
+              multiple
+              value={formData.datePreference || []}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  datePreference: e.target.value.split(","),
+                  datePreference: Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value
+                  ),
                 })
               }
-              className="w-full p-2 bg-gray-800"
-            />
+              className="w-full p-2 bg-gray-800 text-white"
+              size={7}
+            >
+              <option value="🔒 Privado">🔒 Privado</option>
+              <option value="🌆 Público">🌆 Público</option>
+              <option value="🎬 Cinema">🎬 Cinema</option>
+              <option value="🍽️ Restaurante">
+                🍽️ Restaurante
+              </option>
+              <option value="🏖️ Praia">🏖️ Praia</option>
+              <option value="🛍️ Shopping">🛍️ Shopping</option>
+              <option value="🚗 Passeio">🚗 Passeio</option>
+              <option value="🏠 Casa">🏠 Casa</option>
+            </select>
           ) : (
             <p>{(user.datePreference || []).join(", ")}</p>
           )}
         </div>
 
+        {/* PEDIDOS */}
         <div>
           <strong>Pedidos:</strong>
           {isEditing ? (
-            <input
-              value={(formData.meetingRequest || []).join(", ")}
+            <select
+              multiple
+              value={formData.meetingRequest || []}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  meetingRequest: e.target.value.split(","),
+                  meetingRequest: Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value
+                  ),
                 })
               }
-              className="w-full p-2 bg-gray-800"
-            />
+              className="w-full p-2 bg-gray-800 text-white"
+              size={8}
+            >
+              <option value="❤️ Respeito">❤️ Respeito</option>
+              <option value="😊 Bondade">😊 Bondade</option>
+              <option value="🤝 Honestidade">🤝 Honestidade</option>
+              <option value="💬 Boa conversa">💬 Boa conversa</option>
+              <option value="😂 Diversão">😂 Diversão</option>
+              <option value="🥰 Carinho">🥰 Carinho</option>
+              <option value="🧠 Boa conexão">🧠 Boa conexão</option>
+              <option value="👂 Saber ouvir">👂 Saber ouvir</option>
+              <option value="🌹 Romantismo">🌹 Romantismo</option>
+              <option value="✨ Química">✨ Química</option>
+              <option value="🫶 Compreensão">🫶 Compreensão</option>
+              <option value="😌 Conforto">😌 Conforto</option>
+              <option value="🗣️ Comunicação aberta">
+                🗣️ Comunicação aberta
+              </option>
+              <option value="🙏 Educação">🙏 Educação</option>
+              <option value="🔥 Atração">🔥 Atração</option>
+              <option value="🌟 Boas experiências">
+                🌟 Boas experiências
+              </option>
+              <option value="⏰ Pontualidade">⏰ Pontualidade</option>
+              <option value="🚫 Sem pressão">🚫 Sem pressão</option>
+              <option value="🛡️ Segurança">🛡️ Segurança</option>
+              <option value="😎 Ser espontâneo">
+                😎 Ser espontâneo
+              </option>
+              <option value="🎉 Divertir-se">
+                🎉 Divertir-se
+              </option>
+            </select>
           ) : (
             <p>{(user.meetingRequest || []).join(", ")}</p>
           )}
@@ -266,3 +382,4 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
+
