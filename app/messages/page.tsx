@@ -125,7 +125,7 @@ export default function MessagesPage() {
       <div className="flex justify-center mb-6">
         <button
           onClick={() => router.push("/home")}
-          className="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition"
+          className="bg-[#1877F2] text-white px-4 py-2 rounded hover:bg-[#166FE5] transition"
         >
           Voltar
         </button>
@@ -162,7 +162,7 @@ export default function MessagesPage() {
             <div
               key={chat.id}
               onClick={() => openChat(chat.id)}
-              className="bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700 transition flex items-center gap-3"
+              className="bg-white p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition flex items-center gap-3"
             >
               <img
                 src={
@@ -172,20 +172,29 @@ export default function MessagesPage() {
                 className="w-10 h-10 rounded-full object-cover"
                 alt="Foto de perfil"
               />
+       <div className="flex-1">
+        <p
+    className={`${
+      unreadMap[chat.id]
+        ? "font-bold text-black"
+        : "font-normal text-black"
+       }`}
+       >
+      {otherUser?.name || "Utilizador"}
+      </p>
 
-              <div className="flex-1">
-                <p className="font-semibold">
-                  Conversa com:{" "}
-                  {otherUser?.name || "Utilizador"}
-                </p>
-
-                {chat.lastMessage && (
-                  <p className="text-sm text-gray-400">
-                    {chat.lastMessage}
-                  </p>
-                )}
-              </div>
-
+  {chat.lastMessage && (
+    <p
+      className={`text-sm ${
+        unreadMap[chat.id]
+          ? "font-semibold text-black"
+          : "font-normal text-gray-500"
+      }`}
+    >
+      {chat.lastMessage}
+    </p>
+  )}
+</div>
               {unreadMap[chat.id] && (
                 <span
                   className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"

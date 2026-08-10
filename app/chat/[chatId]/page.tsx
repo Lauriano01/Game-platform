@@ -199,7 +199,7 @@ router.push("/messages");
 return ( <div className="flex flex-col h-screen">
 {/* HEADER MELHORADO */} <div className="p-4 border-b border-gray-700"> <button
        onClick={handleBack}
-       className="mb-3 bg-gray-700 px-4 py-2 rounded hover:bg-gray-600 transition"
+       className="mb-3 bg-[#1877F2] px-4 py-2 rounded hover:bg-[#166FE5] transition text-white"
      >
 ← Voltar </button>
 
@@ -227,7 +227,7 @@ return ( <div className="flex flex-col h-screen">
         >
           <div
             className={`p-3 rounded-lg max-w-xs ${
-              isMe ? "bg-green-600" : "bg-gray-700"
+              isMe ? "bg-[#1877F2] text-white" : "bg-gray-200 text-black"
             }`}
           >
             <div>{msg.text}</div>
@@ -270,7 +270,7 @@ return ( <div className="flex flex-col h-screen">
     <input
       value={text}
       onChange={(e) => setText(e.target.value)}
-      className="flex-1 p-2 bg-gray-800 rounded"
+      className="flex-1 p-2 bg-white text-black placeholder-gray-500 rounded"
       placeholder="Escreve mensagem..."
     />
 
