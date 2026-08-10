@@ -246,7 +246,7 @@ export default function HomePage() {
         {/* MENU HAMBÚRGUER */}
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="text-white text-2xl md:hidden"
+          className="text-white text-2xl md:hidden bg-blue-600 w-11 h-11 rounded-lg flex items-center justify-center"
         >
           ☰
         </button>
@@ -606,3 +606,4 @@ export default function HomePage() {
     </div>
   );
 }
+
