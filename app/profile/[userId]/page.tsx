@@ -125,7 +125,7 @@ const ProfilePage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full p-2 bg-gray-800"
+              className="w-full p-2 bg-white text-black rounded"
             />
           ) : (
             <p>{user.name}</p>
@@ -140,7 +140,7 @@ const ProfilePage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, age: e.target.value })
               }
-              className="w-full p-2 bg-gray-800"
+              className="w-full p-2 bg-white text-black rounded"
             />
           ) : (
             <p>{user.age}</p>
@@ -155,7 +155,7 @@ const ProfilePage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, location: e.target.value })
               }
-              className="w-full p-2 bg-gray-800"
+              className="w-full p-2 bg-white text-black rounded"
             />
           ) : (
             <p>{user.location}</p>
@@ -174,7 +174,7 @@ const ProfilePage = () => {
                   sexualPreference: e.target.value,
                 })
               }
-              className="w-full p-2 bg-gray-800 text-white"
+              className="w-full p-2 bg-white text-black rounded"
             >
               <option value="">Selecione uma opção</option>
               <option value="Heterossexual">Heterossexual</option>
@@ -208,7 +208,7 @@ const ProfilePage = () => {
                   ),
                 })
               }
-              className="w-full p-2 bg-gray-800 text-white"
+              className="w-full p-2 bg-white text-black rounded"
               size={8}
             >
               <option value="💰 Dinheiro">💰 Dinheiro</option>
@@ -273,7 +273,7 @@ const ProfilePage = () => {
                   ),
                 })
               }
-              className="w-full p-2 bg-gray-800 text-white"
+              className="w-full p-2 bg-white text-black rounded"
               size={7}
             >
               <option value="🔒 Privado">🔒 Privado</option>
@@ -308,7 +308,7 @@ const ProfilePage = () => {
                   ),
                 })
               }
-              className="w-full p-2 bg-gray-800 text-white"
+             className="w-full p-2 bg-white text-black rounded"
               size={8}
             >
               <option value="❤️ Respeito">❤️ Respeito</option>

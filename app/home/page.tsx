@@ -23,6 +23,9 @@ export default function HomePage() {
   // Mensagens não lidas
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // MOSTRAR PERFIS
+  const [showAllProfiles, setShowAllProfiles] = useState(false);
+
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -226,14 +229,14 @@ export default function HomePage() {
   // =========================
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-white">
+      <div>
         Carregando perfis, por favor aguarde...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div>
 
       {/* =========================
           TOPO
@@ -465,8 +468,10 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 
-            {filteredUsers.map((user) =>
-              user.id !== userId ? (
+            {filteredUsers
+              .filter((user) => user.id !== userId)
+              .slice(0, showAllProfiles ? filteredUsers.length : 5)
+              .map((user) => (
                 <div
                   key={user.id}
                   className="bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
@@ -496,9 +501,9 @@ export default function HomePage() {
 
                   <div className="text-center">
 
-                    <h3 className="text-xl font-semibold">
-                      {user.name}
-                    </h3>
+                    <h3 className="text-xl font-semibold text-white">
+  {user.name}
+</h3>
 
                     <p className="text-gray-400 text-sm">
                       {user.age
@@ -524,10 +529,24 @@ export default function HomePage() {
 
                   </div>
                 </div>
-              ) : null
-            )}
+              ))}
 
           </div>
+
+          {/* BOTÃO VER MAIS / VER MENOS */}
+          {filteredUsers.filter((user) => user.id !== userId).length > 5 && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() =>
+                  setShowAllProfiles(!showAllProfiles)
+                }
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+              >
+                {showAllProfiles ? "Ver menos" : "Ver mais"}
+              </button>
+            </div>
+          )}
+
         </>
       )}
 
