@@ -6,6 +6,7 @@ import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { useParams, useRouter } from "next/navigation";
 import { User } from "../../../types";
 
+
 const ProfilePage = () => {
   const { userId } = useParams();
   const router = useRouter();
@@ -345,42 +346,8 @@ const ProfilePage = () => {
             <p>{(user.meetingRequest || []).join(", ")}</p>
           )}
         </div>
-        {/* FANTASIAS SEXUAIS */}
-<div>
-  <strong>Fantasias sexuais:</strong>
-  {isEditing ? (
-    <select
-      multiple
-      value={formData.sexualFantasy || []}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          sexualFantasy: Array.from(
-            e.target.selectedOptions,
-            (option) => option.value
-          ),
-        })
-      }
-      className="w-full p-2 bg-white text-black rounded"
-      size={6}
-    >
-      <option value="A 3">A 3 </option>
-      <option value="Fio terra">Fio terra</option>
-      <option value="Alcolizado">Alcolizado</option>
-      <option value="🚗 No carro">🚗 No carro</option>
-      <option value="🌙 Ao ar livre">🌙 Ao ar livre</option>
-      <option value="Selvagem">Selvagem</option>
-      <option value="Beijo grego">Beijo grego</option>
-      <option value="Na cozinha">Na cozinha</option>
-      <option value="Em grupo">Em grupo</option>
-      <option value="Sem comprimisso">Sem comprimisso</option>
-      <option value="Outro">Outro</option>
-    
-    </select>
-  ) : (
-    <p>{(user.sexualFantasy || []).join(", ")}</p>
-  )}
-</div>
+        
+
 
       </div>
 

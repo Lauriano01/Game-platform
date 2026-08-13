@@ -126,10 +126,27 @@ export default function RegisterPage() {
               </span>
             </label>
 
-            <div className="mt-2 max-h-32 overflow-y-auto p-2 border border-gray-200 rounded text-gray-600 text-xs bg-gray-50">
+            <div className="mt-2 max-h-32 overflow-y-auto p-3 border border-gray-200 rounded text-gray-600 text-xs bg-gray-50 space-y-3 leading-relaxed">
               {/* Texto resumido dos termos */}
-              <p><strong>Natureza do Serviço:</strong> A plataforma oferece serviço de companhia...</p>
-              <p><strong>Pagamentos e Reembolsos:</strong> Detalhes sobre pagamentos e reembolsos...</p>
+              <p><strong>Natureza do Serviço:</strong> A plataforma oferece serviço de companhia, é uma plataforma digital de encontros e conexões sociais inspirada no conceito de encontros às cegas iniciado no Japão, permitindo que adultos conheçam outras pessoas para companhia, amizade, conversas, encontros e possíveis relacionamentos.</p>
+              <p><strong>Ao criar uma conta ou utilizar a plataforma, o utilizador declara que leu, compreendeu e concorda com estes Termos e Condições:</strong> 
+              </p>
+             
+              <p>  A plataforma é exclusivamente destinada a adultos com 18 anos
+              ou mais.
+              
+            </p> 
+          <p> Trate todos os utilizadores com respeito, e não são permitidos
+              assédio, ameaças, intimidação ou perseguição.</p>
+              <p>Os primeiros encontros devem ser realizados em locais públicos
+              e seguros. Nunca pressione outra pessoa para encontrar-se
+              pessoalmente.</p>
+              <p>Se encontrar uma situação perigosa, abusiva ou suspeita,
+              utilize os mecanismos de denúncia disponibilizados pela
+              plataforma.</p>
+              <p>Quem violar as regras poderá receber uma advertência, ter
+              conteúdos removidos, ser temporariamente suspenso ou ter a
+              conta permanentemente bloqueada.</p>
             </div>
           </div>
 
