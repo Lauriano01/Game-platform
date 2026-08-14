@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { db, auth } from "@/lib/firebase";
 import {
   collection,
@@ -27,6 +26,9 @@ export default function MessagesPage() {
   const [usersMap, setUsersMap] = useState<Record<string, any>>({});
   const [unreadMap, setUnreadMap] = useState<Record<string, boolean>>({});
 
+  // Cache dos perfis para evitar buscar novamente o mesmo utilizador
+  const usersCacheRef = useRef<Record<string, any>>({});
+
   const userId: string | undefined = auth.currentUser?.uid;
 
   useEffect(() => {
@@ -42,66 +44,133 @@ export default function MessagesPage() {
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const chatList: Chat[] = [];
+      const chatList: Chat[] = snapshot.docs.map((chatDoc) => ({
+        id: chatDoc.id,
+        ...(chatDoc.data() as any),
+      }));
 
-      for (const chatDoc of snapshot.docs) {
-        chatList.push({
-          id: chatDoc.id,
-          ...(chatDoc.data() as any),
-        });
-      }
-
+      // Mantém o comportamento atual da interface
       setChats(chatList);
 
-      const newUsersMap: Record<string, any> = {};
+      const newUsersMap: Record<string, any> = {
+        ...usersCacheRef.current,
+      };
+
       const newUnreadMap: Record<string, boolean> = {};
 
-      for (const chat of chatList) {
-        let otherUserId: string | undefined;
+      /*
+       * Todas as conversas são processadas em paralelo.
+       *
+       * Antes:
+       * conversa 1 -> esperar usuário -> esperar mensagens
+       * conversa 2 -> esperar usuário -> esperar mensagens
+       * conversa 3 -> esperar usuário -> esperar mensagens
+       *
+       * Agora:
+       * todas as consultas necessárias podem acontecer ao mesmo tempo.
+       */
+      await Promise.all(
+        chatList.map(async (chat) => {
+          let otherUserId: string | undefined;
 
-        if (chat.users) {
-          for (const id of chat.users) {
-            if (id !== userId) {
-              otherUserId = id;
+          if (chat.users) {
+            for (const id of chat.users) {
+              if (id !== userId) {
+                otherUserId = id;
+                break;
+              }
+            }
+          }
+
+          if (!otherUserId) {
+            newUnreadMap[chat.id] = false;
+            return;
+          }
+
+          /*
+           * -------------------------------------------------------
+           * BUSCAR PERFIL
+           * -------------------------------------------------------
+           *
+           * Se já temos o perfil em cache, não fazemos outra
+           * leitura do Firestore.
+           */
+          let userPromise: Promise<any> | null = null;
+
+          if (!usersCacheRef.current[otherUserId]) {
+            const userRef = doc(db, "users", otherUserId);
+
+            userPromise = getDoc(userRef).then((userSnapshot) => {
+              if (userSnapshot.exists()) {
+                const userData = userSnapshot.data();
+
+                usersCacheRef.current[otherUserId!] = userData;
+                newUsersMap[otherUserId!] = userData;
+              }
+
+              return userSnapshot;
+            });
+          } else {
+            newUsersMap[otherUserId] =
+              usersCacheRef.current[otherUserId];
+          }
+
+          /*
+           * -------------------------------------------------------
+           * MENSAGENS NÃO LIDAS
+           * -------------------------------------------------------
+           *
+           * Antes o código baixava TODAS as mensagens da conversa.
+           *
+           * Agora buscamos somente mensagens que ainda estão
+           * com seen: false.
+           *
+           * Isso evita baixar todo o histórico da conversa.
+           */
+          const messagesRef = collection(
+            db,
+            "conversations",
+            chat.id,
+            "messages"
+          );
+
+          const unreadQuery = query(
+            messagesRef,
+            where("seen", "==", false)
+          );
+
+          const unreadPromise = getDocs(unreadQuery);
+
+          /*
+           * As duas operações acontecem em paralelo.
+           */
+          const [, unreadSnapshot] = await Promise.all([
+            userPromise,
+            unreadPromise,
+          ]);
+
+          let hasUnreadMessage = false;
+
+          for (const messageDoc of unreadSnapshot.docs) {
+            const messageData = messageDoc.data();
+
+            /*
+             * Mantemos exatamente a regra atual:
+             *
+             * mensagem recebida + seen false = não lida
+             */
+            if (
+              messageData.senderId !== userId &&
+              messageData.seen === false
+            ) {
+              hasUnreadMessage = true;
               break;
             }
           }
-        }
 
-        if (otherUserId) {
-          const userRef = doc(db, "users", otherUserId);
-          const userSnapshot = await getDoc(userRef);
-
-          if (userSnapshot.exists()) {
-            newUsersMap[otherUserId] = userSnapshot.data();
-          }
-        }
-
-        const messagesRef = collection(
-          db,
-          "conversations",
-          chat.id,
-          "messages"
-        );
-
-        const messagesSnapshot = await getDocs(messagesRef);
-
-        let hasUnreadMessage = false;
-
-        for (const messageDoc of messagesSnapshot.docs) {
-          const messageData = messageDoc.data();
-
-          if (
-            messageData.senderId !== userId &&
-            messageData.seen === false
-          ) {
-            hasUnreadMessage = true;
-            break;
-          }
-        }
-
-        newUnreadMap[chat.id] = hasUnreadMessage;
-      }
+          newUnreadMap[chat.id] = hasUnreadMessage;
+        })
+      );
 
       setUsersMap(newUsersMap);
       setUnreadMap(newUnreadMap);
