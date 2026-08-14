@@ -260,7 +260,7 @@ const ProfilePage = () => {
 
         {/* ENCONTROS */}
         <div>
-          <strong>Encontros:</strong>
+          <strong>Perfil:</strong>
           {isEditing ? (
             <select
               multiple
@@ -277,16 +277,18 @@ const ProfilePage = () => {
               className="w-full p-2 bg-white text-black rounded"
               size={7}
             >
-              <option value="🔒 Privado">🔒 Privado</option>
-              <option value="🌆 Público">🌆 Público</option>
-              <option value="🎬 Cinema">🎬 Cinema</option>
-              <option value="🍽️ Restaurante">
-                🍽️ Restaurante
+              <option value="🔒 Estudante">🔒 Estudante</option>
+              <option value="Casado(a)">Casado(a)</option>
+              <option value="Lotador">Lotador</option>
+              <option value="Taxista">
+                Taxista
               </option>
-              <option value="🏖️ Praia">🏖️ Praia</option>
-              <option value="🛍️ Shopping">🛍️ Shopping</option>
-              <option value="🚗 Passeio">🚗 Passeio</option>
-              <option value="🏠 Casa">🏠 Casa</option>
+              <option value="Cristão(ã) dedicado">Cristão(ã) dedicado</option>
+              <option value="Mãe solteira">Mãe Solteira</option>
+              <option value="Pai solteiro">Pai Solteiro</option>
+              <option value="Betinha">Betinha</option>
+                <option value="visionaria">Visionaria</option>
+                  <option value="Outro">Outro</option>
             </select>
           ) : (
             <p>{(user.datePreference || []).join(", ")}</p>
